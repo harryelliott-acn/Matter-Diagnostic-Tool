@@ -1,0 +1,14 @@
+## Client data — never commit
+client-briefs/
+output/
+
+## Claude Code settings
+.claude/
+
+## macOS
+.DS_Store
+**/.DS_Store
+
+## Logs
+*.log
+*.jsonl

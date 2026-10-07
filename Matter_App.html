@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matter — CX Diagnostic by Accenture Song</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0A0B14;--bg2:#0F1020;--bg3:#12132B;
+  --border:#1E2040;--border2:#2E2E50;
+  --text:#E8E8F0;--text2:#A0A0BC;--text3:#6B6B8A;
+  --accent:#A100FF;--accent2:#C084FC;
+  --risk-h:#FF3B3B;--risk-m:#FF9500;--risk-l:#00C076;
+  --font:'Inter','Helvetica Neue',Arial,sans-serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.6;overflow:hidden}
+
+/* ── SETUP ── */
+#setup{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200}
+.setup-logo{text-align:center;margin-bottom:32px}
+.setup-logo .matter{font-size:32px;font-weight:900;color:var(--accent);letter-spacing:-1px}
+.setup-logo .by{font-size:10px;color:var(--text3);letter-spacing:3px;text-transform:uppercase;margin-top:2px}
+.setup-card{background:var(--bg2);border:1px solid var(--border);padding:36px 40px;width:100%;max-width:460px}
+.setup-card h1{font-size:18px;font-weight:700;margin-bottom:6px}
+.setup-card .sub{color:var(--text3);font-size:12px;margin-bottom:28px;line-height:1.6}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:6px}
+.field input,.field textarea,.field select{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:10px 14px;font-size:13px;font-family:var(--font);outline:none;transition:border-color .2s}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent)}
+.field textarea{resize:vertical;min-height:72px}
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:36px}
+.pw-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;line-height:1}
+.btn-primary{width:100%;background:var(--accent);color:#fff;border:none;padding:13px;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:background .2s;margin-top:4px}
+.btn-primary:hover{background:#8800DD}
+.setup-note{font-size:10px;color:var(--text3);text-align:center;margin-top:14px;line-height:1.6}
+.setup-note a{color:var(--accent2);text-decoration:none}
+
+/* ── APP SHELL ── */
+#app{display:flex;height:100vh}
+
+/* ── SIDEBAR ── */
+#sidebar{width:220px;min-width:220px;background:#000;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sb-logo{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:8px}
+.sb-logo .m{font-size:15px;font-weight:900;color:var(--accent);letter-spacing:-0.5px}
+.sb-logo .s{font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase}
+.sb-client{padding:12px 18px;border-bottom:1px solid var(--border);background:var(--bg3)}
+.sb-client .lbl{font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px}
+.sb-client .nm{font-size:12px;font-weight:700;color:var(--accent2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-steps{flex:1;overflow-y:auto;padding:12px 0}
+.step-item{padding:9px 18px;display:flex;align-items:flex-start;gap:10px;position:relative}
+.step-item::after{content:'';position:absolute;left:26px;top:28px;bottom:-9px;width:1px;background:var(--border)}
+.step-item:last-child::after{display:none}
+.step-dot{width:16px;height:16px;min-width:16px;border:2px solid var(--border2);background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:8px;position:relative;z-index:1;margin-top:1px}
+.step-dot.active{border-color:var(--accent);background:var(--accent)}
+.step-dot.done{border-color:var(--risk-l);background:var(--risk-l);color:#000}
+.step-dot.done::after{content:'✓';font-weight:900;font-size:9px}
+.step-info .sn{font-size:11px;font-weight:600;color:var(--text3)}
+.step-info .sn.active{color:var(--text)}
+.step-info .sn.done{color:var(--risk-l)}
+.step-info .sd{font-size:9px;color:var(--text3);margin-top:1px;line-height:1.4}
+.sb-foot{padding:14px 18px;border-top:1px solid var(--border)}
+.sb-foot label{font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:5px}
+.sb-foot select{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);padding:6px 8px;font-size:11px;font-family:var(--font);outline:none}
+
+/* ── CHAT MAIN ── */
+#chat-main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+#chat-head{padding:12px 22px;border-bottom:1px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:space-between;min-height:52px}
+#chat-head .left .phase-lbl{font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase}
+#chat-head .left .phase-nm{font-size:13px;font-weight:700;color:var(--text)}
+.head-btns{display:flex;gap:8px;align-items:center}
+.btn-sm{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);padding:6px 14px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn-sm:hover{border-color:var(--accent);color:var(--accent2)}
+.btn-sm.accent{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-sm.accent:hover{background:#8800DD}
+.btn-sm.green{background:#003010;border-color:var(--risk-l);color:var(--risk-l)}
+#messages{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:18px}
+#messages::-webkit-scrollbar{width:3px}
+#messages::-webkit-scrollbar-thumb{background:var(--border2)}
+
+/* ── MESSAGES ── */
+.msg{display:flex;gap:10px;max-width:900px;width:100%}
+.msg.user{flex-direction:row-reverse;margin-left:auto}
+.av{width:28px;height:28px;min-width:28px;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--text3);align-self:flex-start;flex-shrink:0}
+.msg.agent .av{border-color:var(--accent);color:var(--accent)}
+.msg-body{flex:1;min-width:0}
+.msg-meta{font-size:9px;color:var(--text3);margin-bottom:4px;letter-spacing:.5px}
+.msg.user .msg-meta{text-align:right}
+.bubble{background:var(--bg2);border:1px solid var(--border);padding:13px 16px;font-size:13px;line-height:1.75;color:var(--text2)}
+.msg.user .bubble{background:var(--bg3);border-color:var(--border2)}
+.msg.agent .bubble{border-left:3px solid var(--accent)}
+.bubble p+p{margin-top:8px}
+.bubble strong{color:var(--text);font-weight:600}
+
+/* ── TYPING ── */
+.dots{display:inline-flex;gap:4px;padding:2px 0}
+.dots span{width:6px;height:6px;background:var(--text3);display:inline-block;animation:bop 1.2s infinite}
+.dots span:nth-child(2){animation-delay:.15s}
+.dots span:nth-child(3){animation-delay:.3s}
+@keyframes bop{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+/* ── OUTPUT CARDS ── */
+.ocard{margin-top:14px;background:var(--bg);border:1px solid var(--border);border-left:4px solid var(--accent)}
+.ocard-head{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.agent-chip{font-size:9px;font-weight:700;padding:2px 8px;letter-spacing:1px;text-transform:uppercase}
+.ocard-title{font-size:12px;font-weight:700;color:var(--text)}
+.ocard-body{padding:16px}
+.sec-title{font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px}
+
+/* Stages */
+.stages-wrap{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.stage-pill{padding:4px 14px;border:1px solid var(--border2);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent2)}
+.stage-pill.H{border-color:var(--risk-h);color:var(--risk-h)}
+.stage-pill.M{border-color:var(--risk-m);color:var(--risk-m)}
+.stage-pill.L{border-color:var(--risk-l);color:var(--risk-l)}
+
+/* Evidence tags */
+.ev{display:inline-block;font-size:8px;font-weight:700;padding:1px 6px;vertical-align:middle;margin-right:5px}
+.ev.EVIDENCED{background:var(--risk-l);color:#000}
+.ev.INFERRED{background:var(--risk-m);color:#000}
+.ev.HYPOTHESIS{background:var(--border2);color:var(--text2)}
+.finding-row{background:var(--bg3);padding:9px 12px;font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:4px}
+.finding-row.EVIDENCED{border-left:3px solid var(--risk-l)}
+.finding-row.INFERRED{border-left:3px solid var(--risk-m)}
+.finding-row.HYPOTHESIS{border-left:3px solid var(--border2)}
+
+/* Heatmap */
+.hm-wrap{overflow-x:auto}
+table.hm{width:100%;border-collapse:separate;border-spacing:2px;min-width:560px;font-size:11px}
+table.hm thead th{background:var(--bg3);color:var(--text3);font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:8px 10px;text-align:left;white-space:nowrap}
+table.hm .sc{background:var(--bg3);color:var(--accent);font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:12px 10px;width:90px}
+table.hm .fc{padding:10px;vertical-align:top;min-width:120px}
+table.hm .fc.H{background:#1A0808;border-left:3px solid var(--risk-h)}
+table.hm .fc.M{background:#1A1000;border-left:3px solid var(--risk-m)}
+table.hm .fc.L{background:#081A0C;border-left:3px solid var(--risk-l)}
+.rb{display:inline-block;font-size:8px;font-weight:700;padding:2px 5px;margin-bottom:4px}
+.rb.H{background:var(--risk-h);color:#fff}
+.rb.M{background:var(--risk-m);color:#000}
+.rb.L{background:var(--risk-l);color:#000}
+.fc-txt{font-size:10px;color:var(--text2);line-height:1.4}
+.fc-ev{font-size:9px;color:var(--text3);margin-top:3px;font-style:italic}
+table.hm .ov{background:var(--bg2);text-align:center;padding:10px;vertical-align:middle;min-width:60px}
+
+/* Commercial */
+.comm-hl{background:var(--bg3);border:1px solid var(--accent);padding:20px;text-align:center;margin-bottom:14px}
+.comm-hl .lbl{font-size:9px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+.comm-hl .val{font-size:28px;font-weight:700;color:var(--accent2)}
+.comm-hl .sub{font-size:10px;color:var(--text3);margin-top:3px}
+.comm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:14px}
+.cc{background:var(--bg3);border:1px solid var(--border);padding:14px}
+.cc.H{border-left:4px solid var(--risk-h)}
+.cc.M{border-left:4px solid var(--risk-m)}
+.cc-lbl{font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.cc-val{font-size:18px;font-weight:700;color:var(--accent2);margin-bottom:4px}
+.cc-conf{font-size:8px;font-weight:700;padding:1px 6px}
+.cc-conf.HIGH{background:var(--risk-l);color:#000}
+.cc-conf.MEDIUM{background:var(--risk-m);color:#000}
+.cc-conf.LOW{background:var(--risk-h);color:#fff}
+.cc-mech{font-size:10px;color:var(--text3);margin-top:7px;line-height:1.5}
+.cc-cfo{background:#1A1200;border-left:2px solid var(--risk-m);padding:7px 10px;font-size:10px;color:#C8A000;margin-top:8px;line-height:1.5}
+.upside-card{background:#081A0C;border:1px solid var(--risk-l);padding:14px}
+.upside-val{font-size:18px;font-weight:700;color:var(--risk-l);margin-bottom:4px}
+
+/* Go digging */
+.dig-item{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;background:var(--bg3);margin-bottom:2px}
+.dig-n{font-size:11px;font-weight:700;color:var(--accent);min-width:20px;flex-shrink:0}
+.dig-t{font-size:11px;color:var(--text2);flex:1;line-height:1.45}
+.dig-p{font-size:8px;font-weight:700;padding:2px 5px;flex-shrink:0}
+.dig-p.H{background:var(--risk-h);color:#fff}
+.dig-p.M{background:var(--risk-m);color:#000}
+.dig-tm{font-size:9px;color:var(--text3);flex-shrink:0;min-width:45px;text-align:right}
+
+/* Growth */
+.terr-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.terr{background:var(--bg3);border:1px solid var(--border);border-left:4px solid var(--accent);padding:14px}
+.terr-name{font-size:10px;font-weight:700;color:var(--accent2);letter-spacing:.5px;margin-bottom:5px}
+.terr-meta{font-size:9px;color:var(--text3);margin-bottom:6px}
+.terr-desc{font-size:11px;color:var(--text2);line-height:1.55}
+.terr-clink{font-size:10px;color:var(--accent2);margin-top:7px;font-style:italic}
+
+/* QA */
+.qa-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.qa-lbl{font-size:11px;color:var(--text2);width:200px;flex-shrink:0}
+.qa-bar-bg{flex:1;background:var(--bg3);height:7px}
+.qa-bar-fg{height:7px;transition:width .8s ease}
+.qa-bar-fg.g{background:var(--risk-l)}
+.qa-bar-fg.a{background:var(--risk-m)}
+.qa-bar-fg.r{background:var(--risk-h)}
+.qa-sc{font-size:11px;font-weight:700;color:var(--text);min-width:38px;text-align:right}
+.qa-total{font-size:22px;font-weight:700;color:var(--accent2);text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.flag-row{background:#1A0A00;border-left:3px solid var(--risk-m);padding:8px 12px;font-size:11px;color:#C8A000;margin-bottom:4px}
+
+/* Checkpoint banner */
+#checkpoint-banner{display:none;margin:0 0 0 0;background:#0C001A;border-top:1px solid var(--accent);border-bottom:1px solid var(--accent);padding:16px 24px;display:none;align-items:center;justify-content:space-between;gap:16px}
+.cp-txt{font-size:12px;font-weight:600;color:var(--text)}
+.cp-sub{font-size:10px;color:var(--text3);margin-top:3px}
+
+/* Downloads */
+#dl-bar{display:none;border-top:1px solid var(--border);padding:12px 22px;background:var(--bg2);gap:8px;flex-wrap:wrap;align-items:center}
+.dl-lbl{font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-right:4px}
+.dl-btn{background:#003010;border:1px solid var(--risk-l);color:var(--risk-l);padding:7px 16px;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;text-decoration:none;display:inline-block;transition:background .2s}
+.dl-btn:hover{background:#004820}
+
+/* Input area */
+#input-area{border-top:1px solid var(--border);padding:14px 22px;background:var(--bg)}
+.input-row{display:flex;gap:8px;align-items:flex-end}
+#user-input{flex:1;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:10px 13px;font-size:13px;font-family:var(--font);resize:none;outline:none;min-height:42px;max-height:130px;overflow-y:auto;transition:border-color .2s;line-height:1.5}
+#user-input:focus{border-color:var(--accent)}
+#send-btn{background:var(--accent);border:none;color:#fff;padding:0 20px;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;height:42px;min-width:70px;text-transform:uppercase;transition:background .2s;flex-shrink:0}
+#send-btn:hover{background:#8800DD}
+#send-btn:disabled{background:var(--border2);cursor:not-allowed}
+.input-hint{font-size:10px;color:var(--text3);margin-top:7px}
+
+/* System notes */
+.sys-note{text-align:center;padding:4px 0}
+.sys-note span{font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;background:var(--bg2);padding:3px 12px;border:1px solid var(--border)}
+
+/* Loading spinner */
+.spin{display:inline-block;width:10px;height:10px;border:2px solid var(--border2);border-top-color:var(--accent);animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:680px){#sidebar{display:none}.terr-grid{grid-template-columns:1fr}.comm-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- ══ SETUP ══ -->
+<div id="setup">
+  <div class="setup-logo">
+    <div class="matter">Matter</div>
+    <div class="by">by Accenture Song</div>
+  </div>
+  <div class="setup-card">
+    <h1>New CX Diagnostic</h1>
+    <p class="sub">Identify a client's biggest CX threats and growth opportunities. Powered by Claude.</p>
+    <div class="field">
+      <label>Anthropic API Key</label>
+      <div class="pw-wrap">
+        <input type="password" id="api-key" placeholder="sk-ant-api03-…" autocomplete="off">
+        <button class="pw-eye" onclick="togglePw()">👁</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Client Name</label>
+      <input type="text" id="client-name" placeholder="e.g. Legal &amp; General">
+    </div>
+    <div class="field">
+      <label>Initial context (optional)</label>
+      <textarea id="client-ctx" placeholder="Industry, size, strategic challenges, why this diagnostic…"></textarea>
+    </div>
+    <div class="field">
+      <label>Model</label>
+      <select id="model-setup">
+        <option value="claude-sonnet-5-5">Claude Sonnet 5.5 — Recommended</option>
+        <option value="claude-opus-5-5">Claude Opus 5.5 — Highest quality</option>
+        <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 — Fastest</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="startSession()">Begin Matter Analysis →</button>
+    <p class="setup-note">API key stays in your browser session only — never stored, never sent anywhere except <strong>api.anthropic.com</strong><br>
+    Need a key? <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app" style="display:none">
+
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <div class="sb-logo"><span class="m">Matter</span><span class="s">Accenture Song</span></div>
+    <div class="sb-client">
+      <div class="lbl">Client</div>
+      <div class="nm" id="sb-client">—</div>
+    </div>
+    <div class="sb-steps" id="sb-steps"></div>
+    <div class="sb-foot">
+      <label>Model</label>
+      <select id="model-main" onchange="S.model=this.value">
+        <option value="claude-sonnet-5-5">Sonnet 5.5</option>
+        <option value="claude-opus-5-5">Opus 5.5</option>
+        <option value="claude-haiku-4-5-20251001">Haiku 4.5</option>
+      </select>
+    </div>
+  </aside>
+
+  <!-- Chat -->
+  <div id="chat-main">
+    <div id="chat-head">
+      <div class="left">
+        <div class="phase-lbl" id="phase-lbl">Phase</div>
+        <div class="phase-nm" id="phase-nm">—</div>
+      </div>
+      <div class="head-btns">
+        <button class="btn-sm accent" id="run-btn" onclick="runAnalysis()" style="display:none">Run Analysis →</button>
+        <button class="btn-sm accent" id="cont-btn" onclick="continueFlow()" style="display:none">Continue →</button>
+        <button class="btn-sm" onclick="newSession()">↺ New</button>
+      </div>
+    </div>
+
+    <div id="messages"></div>
+
+    <div id="checkpoint-banner">
+      <div>
+        <div class="cp-txt">Checkpoint — review all outputs before proceeding</div>
+        <div class="cp-sub">Research · Heatmap · Commercial complete</div>
+      </div>
+      <button class="btn-sm accent" onclick="continueFlow()">Continue to Growth →</button>
+    </div>
+
+    <div id="dl-bar">
+      <span class="dl-lbl">Download</span>
+    </div>
+
+    <div id="input-area">
+      <div class="input-row">
+        <textarea id="user-input" rows="1" placeholder="Ask a question or add context…"
+          onkeydown="handleKey(event)" oninput="resize(this)"></textarea>
+        <button id="send-btn" onclick="sendMsg()">Send</button>
+      </div>
+      <div class="input-hint" id="hint">The orchestrator will ask you questions to build the client brief.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ═══════════════════════════════ STATE ═══════════════════════════════ */
+const S = {
+  key:'', model:'claude-sonnet-5-5', client:'', ctx:'',
+  step:'preflight', done:[], streaming:false,
+  history:[], context:'', outputs:{}
+};
+
+const STEPS = [
+  {id:'preflight',name:'Pre-flight',desc:'Ask the Boss questions'},
+  {id:'research', name:'Research',  desc:'Map CX stages + findings'},
+  {id:'diagnostic',name:'Heatmap', desc:'Score stages × dimensions'},
+  {id:'commercial',name:'Commercial',desc:'Value at risk per stage'},
+  {id:'checkpoint',name:'Checkpoint',desc:'Team review pause'},
+  {id:'growth',   name:'Growth',    desc:'Growth territories'},
+  {id:'qa',       name:'QA',        desc:'Quality assurance'},
+];
+
+/* ═══════════════════════════════ PROMPTS ═════════════════════════════ */
+const P_ORCH = `You are Matter, Accenture Song's CX diagnostic. You're in pre-flight: have a focused conversation to build the client brief before running analysis.
+
+Cover (not as a numbered list — naturally, 1-2 questions per message):
+- What strategic challenge prompted this diagnostic right now
+- Known CX pain points or weaknesses
+- Key competitors and where they're winning
+- Commercial scale (customers, revenue, AUM)
+- Any internal initiatives underway
+
+Be direct, senior, intelligent. When you have enough context (3-5 exchanges), end your message with exactly: "I have what I need — click **Run Analysis** to begin." Keep responses under 120 words.`;
+
+const P_RESEARCH = `You are Matter's Research Agent — a senior Accenture Song CX strategist.
+
+Your critical task: determine 3–6 CX stages specific to how THIS client's customers experience them (NOT generic EXPLORE/DECIDE/IN-LIFE/CONNECT). These must reflect the actual customer lifecycle for this industry.
+
+Label every finding: EVIDENCED (confirmed), INFERRED (reasonable), or HYPOTHESIS (testable).
+
+Write a brief narrative, then output this block EXACTLY — valid JSON, nothing after the closing tag:
+
+<MATTER_DATA type="research">
+{"stages":["STAGE1","STAGE2"],"stage_descriptions":["what this stage is","..."],"stage_risks":["HIGH","MEDIUM"],"headline":"One provocative sentence about the biggest CX risk","findings":[{"label":"EVIDENCED","text":"Finding text"},{"label":"INFERRED","text":"..."}],"competitors":[{"name":"Competitor","threat":"How they win"}],"go_digging":[{"task":"Specific action","priority":"H","time":"30 min"},{"task":"...","priority":"M","time":"20 min"}]}
+</MATTER_DATA>`;
+
+const P_DIAG = `You are Matter's Diagnostic Agent. Score the CX journey across stages × dimensions.
+
+Choose 4–5 dimensions most relevant to this client (from: Digital Experience, Personalisation, Guidance & Support, Connected Proposition, Emotional Engagement, Speed & Ease, Value Transparency, Trust — or define your own).
+
+Score each cell HIGH/MEDIUM/LOW. Calibrate: aim ~2-4 HIGH, 4-6 MEDIUM, 2-4 LOW across the full grid. Label each EVIDENCED/INFERRED/HYPOTHESIS.
+
+Write a brief narrative, then:
+
+<MATTER_DATA type="heatmap">
+{"dimensions":["Dim1","Dim2","Dim3","Dim4"],"stages":["Stage1","Stage2","Stage3"],"scores":{"Stage1":{"Dim1":"H","Dim2":"M","Dim3":"L","Dim4":"M"},"Stage2":{"Dim1":"H","Dim2":"H","Dim3":"H","Dim4":"H"}},"findings":{"Stage1":{"Dim1":{"score":"H","finding":"Finding text.","label":"INFERRED"},"Dim2":{"score":"M","finding":"Finding text.","label":"EVIDENCED"}}},"overall":{"Stage1":"M","Stage2":"H"},"headlines":{"Stage1":"Stage headline.","Stage2":"Stage headline."}}
+</MATTER_DATA>`;
+
+const P_COMM = `You are Matter's Commercial Agent. Calculate value at risk using named industry benchmarks.
+
+Rules: ALL values must be ranges (e.g. £8–15M). Name benchmark sources. Apply 10-20% overlap adjustment. Run CFO-attack on every figure. Use currency for the client's market.
+
+Write a brief narrative, then:
+
+<MATTER_DATA type="commercial">
+{"currency":"£","stages":[{"name":"STAGE","risk":"HIGH","val_low":8,"val_high":15,"period":"yr","confidence":"MEDIUM","mechanism":"How value is lost.","cfo_attack":"CFO challenge and response."}],"gross_low":55,"gross_high":89,"overlap_pct":15,"net_low":47,"net_high":76,"upside_low":35,"upside_high":55,"assumptions":[{"text":"Assumption","confidence":"HIGH"}]}
+</MATTER_DATA>`;
+
+const P_GROWTH = `You are Matter's Growth Strategist. Define 4–6 prioritised growth territories based on the heatmap and commercial analysis.
+
+Each territory: addresses a specific HIGH/MEDIUM finding, has a clear commercial link, is actionable in 12 months, has a provocative specific name (not generic).
+
+Write a brief narrative, then:
+
+<MATTER_DATA type="growth">
+{"territories":[{"name":"Territory Name","stage":"Which stage","description":"2-3 sentences on what and why.","commercial_link":"Link to value-at-risk.","effort":"HIGH","impact":"HIGH"}]}
+</MATTER_DATA>`;
+
+const P_QA = `You are Matter's QA Agent. Review the complete analysis and score 5 domains (20 each):
+1. Brief Alignment — does it answer what the team came to find?
+2. Diagnostic Rigour — are scores credible and labelled correctly?
+3. Commercial Credibility — are figures ranges with sources? Does CFO-attack hold?
+4. Growth & Actionability — are territories specific and commercially linked?
+5. Narrative & Provocation — is the story client-ready and differentiated?
+
+Flag 2-3 things to strengthen.
+
+<MATTER_DATA type="qa">
+{"scores":{"Brief Alignment":17,"Diagnostic Rigour":15,"Commercial Credibility":16,"Growth & Actionability":14,"Narrative":18},"total":80,"flags":["Issue 1","Issue 2"]}
+</MATTER_DATA>`;
+
+/* ═══════════════════════════════ SETUP ══════════════════════════════ */
+function togglePw(){const e=document.getElementById('api-key');e.type=e.type==='password'?'text':'password'}
+
+function startSession(){
+  const k=document.getElementById('api-key').value.trim();
+  const n=document.getElementById('client-name').value.trim();
+  if(!k){alert('Enter your Anthropic API key.');return}
+  if(!n){alert('Enter a client name.');return}
+  S.key=k; S.client=n; S.ctx=document.getElementById('client-ctx').value.trim();
+  S.model=document.getElementById('model-setup').value;
+  document.getElementById('setup').style.display='none';
+  document.getElementById('app').style.display='flex';
+  document.getElementById('sb-client').textContent=n;
+  document.getElementById('model-main').value=S.model;
+  buildSidebar();
+  setPhase('preflight','Pre-flight','Ask the Boss');
+  startPreflight();
+}
+
+function newSession(){
+  if(!confirm('Start a new session?'))return;
+  location.reload();
+}
+
+/* ═══════════════════════════════ SIDEBAR ════════════════════════════ */
+function buildSidebar(){
+  document.getElementById('sb-steps').innerHTML=STEPS.map(s=>`
+    <div class="step-item" id="si-${s.id}">
+      <div class="step-dot" id="sd-${s.id}"></div>
+      <div class="step-info">
+        <div class="sn" id="sn-${s.id}">${s.name}</div>
+        <div class="sd">${s.desc}</div>
+      </div>
+    </div>`).join('');
+}
+
+function setPhase(stepId,lbl,nm){
+  S.step=stepId;
+  document.getElementById('phase-lbl').textContent=lbl;
+  document.getElementById('phase-nm').textContent=nm;
+  STEPS.forEach(s=>{
+    const dot=document.getElementById('sd-'+s.id);
+    const nm2=document.getElementById('sn-'+s.id);
+    if(!dot)return;
+    const done=S.done.includes(s.id);
+    dot.className='step-dot'+(done?' done':s.id===stepId?' active':'');
+    nm2.className='sn'+(done?' done':s.id===stepId?' active':'');
+  });
+}
+
+function markDone(id){
+  if(!S.done.includes(id))S.done.push(id);
+  const dot=document.getElementById('sd-'+id);
+  const nm=document.getElementById('sn-'+id);
+  if(dot)dot.className='step-dot done';
+  if(nm)nm.className='sn done';
+}
+
+/* ═══════════════════════════════ MESSAGES ═══════════════════════════ */
+function addMsg(role,html,id){
+  const msgs=document.getElementById('messages');
+  const mid=id||'m'+Date.now()+Math.random().toString(36).slice(2);
+  const isUser=role==='user';
+  const labels={agent:'MAT',research:'RES',diagnostic:'DIA',commercial:'COM',growth:'GRO',qa:'QA',user:'YOU'};
+  const lbl=labels[role]||'MAT';
+  const div=document.createElement('div');
+  div.className='msg '+(isUser?'user':'agent');
+  div.id=mid;
+  div.innerHTML=`
+    <div class="av">${lbl}</div>
+    <div class="msg-body">
+      <div class="msg-meta">${isUser?'You':lbl} · now</div>
+      <div class="bubble" id="b-${mid}">${html||''}</div>
+    </div>`;
+  msgs.appendChild(div);
+  scroll();
+  return mid;
+}
+
+function addTyping(){
+  const id='t'+Date.now();
+  const msgs=document.getElementById('messages');
+  const div=document.createElement('div');
+  div.className='msg agent';div.id=id;
+  div.innerHTML=`<div class="av">M</div><div class="msg-body"><div class="bubble"><div class="dots"><span></span><span></span><span></span></div></div></div>`;
+  msgs.appendChild(div);scroll();return id;
+}
+
+function removEl(id){const e=document.getElementById(id);if(e)e.remove()}
+
+function setBubble(mid,html){
+  const b=document.getElementById('b-'+mid);
+  if(b){b.innerHTML=html;scroll()}
+}
+
+function appendCard(mid,html){
+  const b=document.getElementById('b-'+mid);
+  if(b){b.insertAdjacentHTML('beforeend',html);scroll()}
+}
+
+function sysNote(txt){
+  const msgs=document.getElementById('messages');
+  const div=document.createElement('div');
+  div.className='sys-note';
+  div.innerHTML=`<span>${txt}</span>`;
+  msgs.appendChild(div);scroll();
+}
+
+function scroll(){
+  const m=document.getElementById('messages');
+  m.scrollTop=m.scrollHeight;
+}
+
+function fmt(t){
+  if(!t)return'';
+  return t
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/`([^`]+)`/g,'<code style="background:var(--bg3);padding:1px 4px;font-size:11px">$1</code>')
+    .split(/\n\n+/).map(p=>p.trim()?`<p>${p.replace(/\n/g,'<br>')}</p>`:'').join('');
+}
+
+function stripData(t){return t.replace(/<MATTER_DATA[\s\S]*?<\/MATTER_DATA>/g,'').trim()}
+
+/* ═══════════════════════════════ API ════════════════════════════════ */
+async function stream(system,messages,onChunk,onDone,onErr){
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':S.key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({model:S.model,max_tokens:4096,system,messages,stream:true})
+    });
+    if(!r.ok){
+      const e=await r.json().catch(()=>({error:{message:'HTTP '+r.status}}));
+      onErr(e.error?.message||'API error '+r.status);return;
+    }
+    const reader=r.body.getReader();const dec=new TextDecoder();let full='';
+    while(true){
+      const{done,value}=await reader.read();if(done)break;
+      for(const line of dec.decode(value,{stream:true}).split('\n')){
+        if(!line.startsWith('data: '))continue;
+        const d=line.slice(6).trim();if(d==='[DONE]')continue;
+        try{
+          const p=JSON.parse(d);
+          if(p.type==='content_block_delta'&&p.delta?.type==='text_delta'){
+            full+=p.delta.text;onChunk(p.delta.text,full);
+          }
+        }catch(_){}
+      }
+    }
+    onDone(full);
+  }catch(e){onErr(e.message||'Network error')}
+}
+
+async function callAgent(system,userMsg,role){
+  return new Promise((res,rej)=>{
+    const tid=addTyping();let mid=null;let started=false;
+    stream(system,[{role:'user',content:userMsg}],
+      (_,full)=>{
+        if(!started){removEl(tid);mid=addMsg(role,'');started=true}
+        setBubble(mid,fmt(stripData(full)));
+      },
+      full=>{
+        if(!started){removEl(tid);mid=addMsg(role,fmt(stripData(full)))}
+        res({text:full,mid});
+      },
+      err=>{
+        removEl(tid);
+        addMsg('agent',`⚠️ <strong>Error:</strong> ${err}<br><small style="color:var(--text3)">Check your API key and try again.</small>`);
+        rej(new Error(err));
+      }
+    );
+  });
+}
+
+/* ═══════════════════════════════ PRE-FLIGHT ════════════════════════ */
+async function startPreflight(){
+  S.streaming=true;setSend(false);
+  const init=S.ctx
+    ?`Starting a Matter diagnostic for **${S.client}**. Here's what I know:\n\n${S.ctx}`
+    :`Starting a Matter diagnostic for **${S.client}**. What do you need from me to begin?`;
+  S.history.push({role:'user',content:init});
+  const tid=addTyping();let mid=null;let started=false;
+  stream(P_ORCH,S.history,
+    (_,full)=>{
+      if(!started){removEl(tid);mid=addMsg('agent','');started=true}
+      setBubble(mid,fmt(full));
+    },
+    full=>{
+      if(!started){removEl(tid);mid=addMsg('agent',fmt(full))}
+      S.history.push({role:'assistant',content:full});
+      S.streaming=false;setSend(true);
+      checkRunTrigger(full);
+    },
+    err=>{removEl(tid);addMsg('agent','⚠️ '+err);S.streaming=false;setSend(true)}
+  );
+}
+
+async function sendMsg(){
+  if(S.streaming)return;
+  const inp=document.getElementById('user-input');
+  const txt=inp.value.trim();if(!txt)return;
+  inp.value='';resize(inp);
+  addMsg('user',fmt(txt));
+  if(S.step==='preflight'){
+    S.history.push({role:'user',content:txt});
+    S.streaming=true;setSend(false);
+    const tid=addTyping();let mid=null;let started=false;
+    stream(P_ORCH,S.history,
+      (_,full)=>{
+        if(!started){removEl(tid);mid=addMsg('agent','');started=true}
+        setBubble(mid,fmt(full));
+      },
+      full=>{
+        if(!started){removEl(tid);mid=addMsg('agent',fmt(full))}
+        S.history.push({role:'assistant',content:full});
+        S.streaming=false;setSend(true);checkRunTrigger(full);
+      },
+      err=>{removEl(tid);addMsg('agent','⚠️ '+err);S.streaming=false;setSend(true)}
+    );
+  }else{
+    addMsg('agent',`Noted — "${txt}" will inform subsequent steps.`);
+  }
+}
+
+function checkRunTrigger(txt){
+  if(/run analysis|i have what i need/i.test(txt)){
+    document.getElementById('run-btn').style.display='inline-block';
+    document.getElementById('hint').textContent="Ready. Click 'Run Analysis' to begin, or keep chatting.";
+  }
+}
+
+function buildBrief(){
+  return`CLIENT: ${S.client}\n\nPRE-FLIGHT:\n`+S.history.map(m=>(m.role==='user'?'Team: ':'Matter: ')+m.content).join('\n\n');
+}
+
+/* ═══════════════════════════════ FLOW ══════════════════════════════ */
+async function runAnalysis(){
+  document.getElementById('run-btn').style.display='none';
+  S.streaming=true;setSend(false);
+  await doResearch();
+}
+
+async function doResearch(){
+  setPhase('research','Step 1','Research Agent');
+  sysNote('Research Agent activated');
+  try{
+    const{text,mid}=await callAgent(P_RESEARCH,buildBrief(),'research');
+    const d=parse(text,'research');
+    if(d){S.outputs.research=d;S.context+='\n\nRESEARCH:\n'+stripData(text);appendCard(mid,cardResearch(d))}
+    markDone('research');
+    await doDiagnostic();
+  }catch(e){S.streaming=false;setSend(true)}
+}
+
+async function doDiagnostic(){
+  setPhase('diagnostic','Step 2','Diagnostic Agent');
+  sysNote('Diagnostic Agent activated');
+  try{
+    const{text,mid}=await callAgent(P_DIAG,`CLIENT: ${S.client}\n\n${S.context}`,'diagnostic');
+    const d=parse(text,'heatmap');
+    if(d){S.outputs.heatmap=d;S.context+='\n\nHEATMAP:\n'+stripData(text);appendCard(mid,cardHeatmap(d))}
+    markDone('diagnostic');
+    await doCommercial();
+  }catch(e){S.streaming=false;setSend(true)}
+}
+
+async function doCommercial(){
+  setPhase('commercial','Step 3','Commercial Agent');
+  sysNote('Commercial Agent activated');
+  try{
+    const{text,mid}=await callAgent(P_COMM,`CLIENT: ${S.client}\n\n${S.context}`,'commercial');
+    const d=parse(text,'commercial');
+    if(d){S.outputs.commercial=d;S.context+='\n\nCOMMERCIAL:\n'+stripData(text);appendCard(mid,cardCommercial(d))}
+    markDone('commercial');
+    showCheckpoint();
+  }catch(e){S.streaming=false;setSend(true)}
+}
+
+function showCheckpoint(){
+  setPhase('checkpoint','Checkpoint','Team Review');
+  S.streaming=false;setSend(true);
+  const b=document.getElementById('checkpoint-banner');
+  b.style.display='flex';
+  document.getElementById('cont-btn').style.display='inline-block';
+  document.getElementById('hint').textContent='Review the outputs above, then click Continue to proceed to Growth Territories.';
+  sysNote('Checkpoint — review and continue when ready');
+}
+
+async function continueFlow(){
+  document.getElementById('checkpoint-banner').style.display='none';
+  document.getElementById('cont-btn').style.display='none';
+  markDone('checkpoint');
+  S.streaming=true;setSend(false);
+  await doGrowth();
+}
+
+async function doGrowth(){
+  setPhase('growth','Step 4','Growth Agent');
+  sysNote('Growth Agent activated');
+  try{
+    const{text,mid}=await callAgent(P_GROWTH,`CLIENT: ${S.client}\n\n${S.context}`,'growth');
+    const d=parse(text,'growth');
+    if(d){S.outputs.growth=d;S.context+='\n\nGROWTH:\n'+stripData(text);appendCard(mid,cardGrowth(d))}
+    markDone('growth');
+    genFiles();
+    await doQA();
+  }catch(e){S.streaming=false;setSend(true)}
+}
+
+async function doQA(){
+  setPhase('qa','Step 5','QA Agent');
+  sysNote('QA Agent activated');
+  try{
+    const{text,mid}=await callAgent(P_QA,`CLIENT: ${S.client}\n\n${S.context}`,'qa');
+    const d=parse(text,'qa');
+    if(d){appendCard(mid,cardQA(d))}
+    markDone('qa');
+    finish();
+  }catch(e){S.streaming=false;setSend(true)}
+}
+
+function finish(){
+  S.streaming=false;setSend(true);
+  setPhase('qa','Complete','Matter Analysis Done');
+  sysNote('Analysis complete — download your files below');
+  document.getElementById('dl-bar').style.display='flex';
+  document.getElementById('hint').textContent='Analysis complete. Download your deliverables above.';
+}
+
+/* ═══════════════════════════════ PARSE ═════════════════════════════ */
+function parse(text,type){
+  const m=text.match(new RegExp(`<MATTER_DATA type="${type}">[\\s\\S]*?<\\/MATTER_DATA>`));
+  if(!m)return null;
+  const json=m[0].replace(/<MATTER_DATA[^>]*>/,'').replace(/<\/MATTER_DATA>/,'').trim();
+  try{return JSON.parse(json)}catch(e){console.warn('Parse fail',type,e);return null}
+}
+
+/* ═══════════════════════════════ CARD RENDERERS ════════════════════ */
+function rc(r){return r==='HIGH'?'H':r==='LOW'?'L':'M'}
+
+function cardResearch(d){
+  const stages=(d.stages||[]).map((s,i)=>{
+    const r=rc((d.stage_risks||[])[i]||'MEDIUM');
+    return`<span class="stage-pill ${r}">${s}</span>`;
+  }).join('');
+  const findings=(d.findings||[]).slice(0,6).map(f=>`
+    <div class="finding-row ${f.label}"><span class="ev ${f.label}">${f.label}</span>${f.text}</div>`).join('');
+  const comps=(d.competitors||[]).map(c=>`
+    <div style="background:var(--bg3);padding:9px 12px;margin-bottom:4px;font-size:11px;border-left:3px solid var(--border2)">
+      <strong style="color:var(--text)">${c.name}</strong> — <span style="color:var(--text3)">${c.threat}</span>
+    </div>`).join('');
+  const dig=(d.go_digging||[]).slice(0,8).map((g,i)=>`
+    <div class="dig-item">
+      <div class="dig-n">${i+1}</div>
+      <div class="dig-t">${g.task}</div>
+      <div class="dig-p ${g.priority||'M'}">${g.priority||'M'}</div>
+      <div class="dig-tm">${g.time||''}</div>
+    </div>`).join('');
+  return`
+    <div class="ocard" style="border-left-color:var(--accent)">
+      <div class="ocard-head">
+        <span class="agent-chip" style="background:var(--accent);color:#fff">Research</span>
+        <span class="ocard-title">CX Stage Map — ${S.client}</span>
+      </div>
+      <div class="ocard-body">
+        ${d.headline?`<p style="font-size:13px;font-style:italic;color:var(--text);margin-bottom:14px">"${d.headline}"</p>`:''}
+        <div class="sec-title">Recommended CX Stages</div>
+        <div class="stages-wrap" style="margin-bottom:14px">${stages}</div>
+        ${findings?`<div class="sec-title">Key Findings</div><div style="margin-bottom:14px">${findings}</div>`:''}
+        ${comps?`<div class="sec-title">Competitor Signals</div><div style="margin-bottom:14px">${comps}</div>`:''}
+        ${dig?`<div class="sec-title">Go Digging Tasks</div>${dig}`:''}
+      </div>
+    </div>`;
+}
+
+function cardHeatmap(d){
+  const dims=d.dimensions||[];
+  const stages=d.stages||[];
+  const scores=d.scores||{};
+  const findings=d.findings||{};
+  const overall=d.overall||{};
+  const hdr=dims.map(dim=>`<th>${dim}</th>`).join('')+'<th>Overall</th>';
+  const rows=stages.map(st=>{
+    const cells=dims.map(dim=>{
+      const sc=(scores[st]||{})[dim]||'M';
+      const f=((findings[st]||{})[dim])||{};
+      return`<td class="fc ${sc}"><span class="rb ${sc}">${sc}</span><div class="fc-txt">${f.finding||''}</div>${f.label?`<div class="fc-ev">${f.label}</div>`:''}</td>`;
+    }).join('');
+    const ov=overall[st]||'M';
+    return`<tr><td class="sc">${st}</td>${cells}<td class="ov"><span class="rb ${ov}">${ov}</span></td></tr>`;
+  }).join('');
+  return`
+    <div class="ocard" style="border-left-color:var(--risk-h)">
+      <div class="ocard-head">
+        <span class="agent-chip" style="background:var(--risk-h);color:#fff">Heatmap</span>
+        <span class="ocard-title">CX Diagnostic Grid — ${S.client}</span>
+      </div>
+      <div class="ocard-body">
+        <div class="hm-wrap">
+          <table class="hm"><thead><tr><th>Stage</th>${hdr}</tr></thead><tbody>${rows}</tbody></table>
+        </div>
+      </div>
+    </div>`;
+}
+
+function cardCommercial(d){
+  const cur=d.currency||'£';
+  const stg=(d.stages||[]).map(s=>`
+    <div class="cc ${rc(s.risk)}">
+      <div class="cc-lbl">${s.name} — ${s.risk}</div>
+      <div class="cc-val">${cur}${s.val_low}–${s.val_high}M/${s.period||'yr'}</div>
+      <span class="cc-conf ${s.confidence}">${s.confidence}</span>
+      <div class="cc-mech">${s.mechanism||''}</div>
+      ${s.cfo_attack?`<div class="cc-cfo">⚡ ${s.cfo_attack}</div>`:''}
+    </div>`).join('');
+  const up=d.upside_low?`
+    <div class="upside-card">
+      <div class="cc-lbl" style="color:var(--risk-l)">Upside Opportunity</div>
+      <div class="upside-val">${cur}${d.upside_low}–${d.upside_high}M/yr</div>
+      <div class="cc-mech">Recoverable revenue if top risks are addressed.</div>
+    </div>`:'';
+  return`
+    <div class="ocard" style="border-left-color:var(--accent2)">
+      <div class="ocard-head">
+        <span class="agent-chip" style="background:var(--accent2);color:#000">Commercial</span>
+        <span class="ocard-title">Value at Risk — ${S.client}</span>
+      </div>
+      <div class="ocard-body">
+        <div class="comm-hl">
+          <div class="lbl">Total Annual Value at Risk</div>
+          <div class="val">${cur}${d.net_low||'?'}–${d.net_high||'?'}M</div>
+          <div class="sub">after ${d.overlap_pct||15}% overlap adjustment</div>
+        </div>
+        <div class="comm-grid">${stg}${up}</div>
+        ${(d.assumptions||[]).length?`
+          <div class="sec-title" style="margin-top:10px">Key Assumptions</div>
+          ${d.assumptions.map(a=>`<div style="font-size:10px;color:var(--text3);padding:5px 0;border-bottom:1px solid var(--border)"><span class="cc-conf ${a.confidence}" style="margin-right:6px">${a.confidence}</span>${a.text}</div>`).join('')}`:''}
+      </div>
+    </div>`;
+}
+
+function cardGrowth(d){
+  const cards=(d.territories||[]).map(t=>`
+    <div class="terr">
+      <div class="terr-name">${t.name}</div>
+      <div class="terr-meta">Stage: ${t.stage} · Impact: ${t.impact} · Effort: ${t.effort}</div>
+      <div class="terr-desc">${t.description||''}</div>
+      ${t.commercial_link?`<div class="terr-clink">${t.commercial_link}</div>`:''}
+    </div>`).join('');
+  return`
+    <div class="ocard" style="border-left-color:var(--risk-l)">
+      <div class="ocard-head">
+        <span class="agent-chip" style="background:var(--risk-l);color:#000">Growth</span>
+        <span class="ocard-title">Growth Territories — ${S.client}</span>
+      </div>
+      <div class="ocard-body"><div class="terr-grid">${cards}</div></div>
+    </div>`;
+}
+
+function cardQA(d){
+  const scores=d.scores||{};
+  const total=d.total||Object.values(scores).reduce((a,b)=>a+b,0);
+  const bars=Object.entries(scores).map(([lbl,sc])=>{
+    const cls=sc>=16?'g':sc>=12?'a':'r';
+    return`<div class="qa-row">
+      <div class="qa-lbl">${lbl}</div>
+      <div class="qa-bar-bg"><div class="qa-bar-fg ${cls}" style="width:${sc/20*100}%"></div></div>
+      <div class="qa-sc">${sc}/20</div>
+    </div>`;
+  }).join('');
+  const grade=total>=85?'Outstanding':total>=75?'Strong':total>=60?'Solid':'Needs work';
+  const gc=total>=75?'var(--risk-l)':total>=60?'var(--risk-m)':'var(--risk-h)';
+  const flags=(d.flags||[]).map(f=>`<div class="flag-row">⚠ ${f}</div>`).join('');
+  return`
+    <div class="ocard" style="border-left-color:var(--text3)">
+      <div class="ocard-head">
+        <span class="agent-chip" style="background:var(--border2);color:var(--text2)">QA</span>
+        <span class="ocard-title">Quality Review — ${S.client}</span>
+      </div>
+      <div class="ocard-body">
+        ${bars}
+        <div class="qa-total"><span style="color:${gc}">${total}/100</span> <span style="font-size:12px;color:var(--text3);margin-left:8px">${grade}</span></div>
+        ${flags?`<div style="margin-top:14px">${flags}</div>`:''}
+      </div>
+    </div>`;
+}
+
+/* ═══════════════════════════════ FILE GENERATION ═══════════════════ */
+function genFiles(){
+  const date=new Date().toISOString().slice(0,10);
+  const slug=S.client.replace(/[^a-zA-Z0-9]+/g,'_');
+  const r=S.outputs.research;
+  const h=S.outputs.heatmap;
+  const c=S.outputs.commercial;
+  const g=S.outputs.growth;
+  addDL(buildDeliverable(date,r,h,c,g),`Matter_${slug}_${date}.html`,'Final Deliverable');
+  addDL(buildCheckpoint(date,r,h,c),`Matter_Checkpoint_${slug}_${date}.html`,'Checkpoint');
+}
+
+function addDL(html,name,label){
+  const url=URL.createObjectURL(new Blob([html],{type:'text/html'}));
+  const a=document.createElement('a');
+  a.href=url;a.download=name;a.className='dl-btn';a.textContent='↓ '+label;
+  document.getElementById('dl-bar').appendChild(a);
+}
+
+function buildDeliverable(date,r,h,c,g){
+  const client=S.client;
+  const cur=(c&&c.currency)||'£';
+  const netL=c?c.net_low:'?';const netH=c?c.net_high:'?';
+  const hl=r?r.headline:`${client} — CX Diagnostic`;
+  const stgPills=r?(r.stages||[]).map((s,i)=>{
+    const col=['#FF3B3B','#FF9500','#00C076','#C084FC'][i%4];
+    return`<span style="border:1px solid ${col};padding:5px 16px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${col}">${s}</span>`;
+  }).join(''):'';
+  const findings=r?(r.findings||[]).map(f=>{
+    const bc=f.label==='EVIDENCED'?'#00C076':f.label==='INFERRED'?'#FF9500':'#444466';
+    const tc=f.label==='HYPOTHESIS'?'#E8E8F0':'#000';
+    return`<div style="background:#0F1020;border-left:3px solid ${bc};padding:10px 14px;margin-bottom:6px;font-size:11px;color:#A0A0BC;line-height:1.5"><span style="font-size:8px;font-weight:700;padding:1px 6px;background:${bc};color:${tc};margin-right:8px">${f.label}</span>${f.text}</div>`;
+  }).join(''):'';
+  const hmDims=h?(h.dimensions||[]):[];
+  const hmStgs=h?(h.stages||[]):[];
+  const hmRows=hmStgs.map(st=>{
+    const cells=hmDims.map(dim=>{
+      const sc=((h.scores||{})[st]||{})[dim]||'M';
+      const f=(((h.findings||{})[st])||{})[dim]||{};
+      const bc=sc==='H'?'#FF3B3B':sc==='L'?'#00C076':'#FF9500';
+      const bg=sc==='H'?'#1A0808':sc==='L'?'#081A0C':'#1A1000';
+      return`<td style="background:${bg};border-left:3px solid ${bc};padding:10px;vertical-align:top;min-width:110px"><span style="display:inline-block;font-size:8px;font-weight:700;padding:2px 5px;background:${bc};color:${sc==='H'?'#fff':'#000'};margin-bottom:4px">${sc}</span><div style="font-size:10px;color:#A0A0BC;line-height:1.4">${f.finding||''}</div></td>`;
+    }).join('');
+    const ov=((h.overall||{})[st])||'M';
+    const obc=ov==='H'?'#FF3B3B':ov==='L'?'#00C076':'#FF9500';
+    return`<tr><td style="background:#12132B;color:#A100FF;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:14px 10px;width:90px">${st}</td>${cells}<td style="text-align:center;padding:10px;background:#0F1020"><span style="display:inline-block;font-size:8px;font-weight:700;padding:2px 5px;background:${obc};color:${ov==='H'?'#fff':'#000'}">${ov}</span></td></tr>`;
+  }).join('');
+  const commHL=c?`<div style="background:#0F1020;border:1px solid #A100FF;padding:28px;text-align:center;margin-bottom:20px"><div style="font-size:9px;color:#6B6B8A;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Total Annual Value at Risk</div><div style="font-size:3rem;font-weight:700;color:#C084FC">${cur}${netL}–${netH}M</div><div style="font-size:10px;color:#6B6B8A;margin-top:4px">after ${c.overlap_pct||15}% overlap adjustment</div></div>`:'';
+  const commStgs=c?(c.stages||[]).map(s=>`<div style="background:#0F1020;border:1px solid #1E2040;border-left:4px solid ${s.risk==='HIGH'?'#FF3B3B':'#FF9500'};padding:18px;margin-bottom:10px"><div style="font-size:9px;color:#6B6B8A;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">${s.name} — ${s.risk}</div><div style="font-size:1.5rem;font-weight:700;color:#C084FC;margin-bottom:6px">${cur}${s.val_low}–${s.val_high}M/${s.period||'yr'}</div><div style="font-size:11px;color:#8888AA">${s.mechanism||''}</div>${s.cfo_attack?`<div style="background:#1A1200;border-left:2px solid #FF9500;padding:8px 12px;font-size:10px;color:#C8A000;margin-top:10px">⚡ ${s.cfo_attack}</div>`:''}</div>`).join(''):'';
+  const growthCards=g?(g.territories||[]).map(t=>`<div style="background:#0F1020;border:1px solid #1E2040;border-left:4px solid #A100FF;padding:18px;margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:#C084FC;letter-spacing:.5px;margin-bottom:5px">${t.name}</div><div style="font-size:9px;color:#6B6B8A;margin-bottom:8px">Stage: ${t.stage} · Impact: ${t.impact} · Effort: ${t.effort}</div><div style="font-size:11px;color:#A0A0BC;line-height:1.6">${t.description||''}</div>${t.commercial_link?`<div style="font-size:10px;color:#C084FC;margin-top:8px;font-style:italic">${t.commercial_link}</div>`:''}</div>`).join(''):'';
+
+  return`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Matter — ${client} — ${date}</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{background:#0A0B14;color:#E8E8F0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:.875rem;line-height:1.6}
+.tr{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+nav{position:fixed;top:0;left:0;right:0;background:#000;z-index:999;display:flex;height:52px;border-bottom:1px solid #1E2040}
+nav label{display:flex;align-items:center;padding:0 20px;color:#8888AA;font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border-bottom:3px solid transparent;transition:color .2s}
+nav label:hover{color:#C084FC}
+.page{margin-top:52px}.tp{display:none}
+.cover{background:#000;padding:52px 56px 40px;border-bottom:1px solid #1E2040}
+.cover-lbl{font-size:.65rem;color:#6B6B8A;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px}
+.cover-hl{font-size:1.75rem;font-weight:700;color:#E8E8F0;line-height:1.3;max-width:640px;margin-bottom:20px}
+.cover-val{font-size:2.8rem;font-weight:700;color:#C084FC}
+.cover-sub{font-size:.75rem;color:#6B6B8A;margin-top:4px}
+.content{padding:32px 56px;max-width:1100px}
+.sh{font-size:.9rem;font-weight:700;color:#E8E8F0;margin:24px 0 12px;border-left:3px solid #A100FF;padding-left:10px}
+#r1:checked~.page #t1{display:block}#r2:checked~.page #t2{display:block}
+#r3:checked~.page #t3{display:block}#r4:checked~.page #t4{display:block}
+#r1:checked~nav label[for=r1],#r2:checked~nav label[for=r2],#r3:checked~nav label[for=r3],#r4:checked~nav label[for=r4]{border-bottom-color:#A100FF;color:#fff}
+</style></head><body>
+<input type="radio" name="t" id="r1" class="tr" checked>
+<input type="radio" name="t" id="r2" class="tr">
+<input type="radio" name="t" id="r3" class="tr">
+<input type="radio" name="t" id="r4" class="tr">
+<nav>
+  <label for="r1">Overview</label>
+  <label for="r2">Heatmap</label>
+  <label for="r3">Commercial</label>
+  <label for="r4">Growth</label>
+</nav>
+<div class="page">
+  <div id="t1" class="tp">
+    <div class="cover">
+      <div class="cover-lbl">Matter · CX Diagnostic · ${date}</div>
+      <div class="cover-hl">${hl}</div>
+      <div class="cover-val">${cur}${netL}–${netH}M</div>
+      <div class="cover-sub">Total annual value at risk · ${client}</div>
+    </div>
+    <div class="content">
+      <div class="sh">CX Journey Stages</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px">${stgPills}</div>
+      <div class="sh">Key Findings</div>${findings}
+    </div>
+  </div>
+  <div id="t2" class="tp">
+    <div class="content">
+      <div class="sh">CX Diagnostic Heatmap</div>
+      <div style="overflow-x:auto"><table style="width:100%;border-collapse:separate;border-spacing:2px;min-width:540px">
+        <thead><tr><th style="background:#0D0E1A;color:#6B6B8A;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:8px 10px;text-align:left">Stage</th>
+        ${hmDims.map(d=>`<th style="background:#0D0E1A;color:#6B6B8A;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:8px 10px;text-align:left;white-space:nowrap">${d}</th>`).join('')}
+        <th style="background:#0D0E1A;color:#6B6B8A;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:8px 10px;text-align:center">Overall</th></tr></thead>
+        <tbody>${hmRows}</tbody>
+      </table></div>
+    </div>
+  </div>
+  <div id="t3" class="tp"><div class="content"><div class="sh">Commercial Value at Risk</div>${commHL}${commStgs}</div></div>
+  <div id="t4" class="tp"><div class="content"><div class="sh">Growth Territories</div>${growthCards}</div></div>
+</div>
+</body></html>`;
+}
+
+function buildCheckpoint(date,r,h,c){
+  const client=S.client;
+  const cur=(c&&c.currency)||'£';
+  const netL=c?c.net_low:'?';const netH=c?c.net_high:'?';
+  return`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Matter Checkpoint — ${client}</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{background:#0A0B14;color:#E8E8F0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:.875rem}
+.hdr{background:#000;border-bottom:1px solid #1E2040;padding:14px 28px;display:flex;justify-content:space-between;align-items:center}
+.hdr-title{font-size:.9rem;font-weight:700;color:#A100FF}.hdr-sub{font-size:.7rem;color:#6B6B8A}
+.banner{background:#0D0E1A;border-bottom:1px solid #1E2040;padding:10px 28px;font-size:.72rem;color:#6B6B8A;display:flex;justify-content:space-between}
+.banner strong{color:#A100FF}
+.content{padding:28px 44px}
+.card{background:#0F1020;border:1px solid #1E2040;padding:20px;margin-bottom:14px}
+.sh{font-size:.85rem;font-weight:700;color:#E8E8F0;margin-bottom:12px;border-left:4px solid #A100FF;padding-left:10px}
+.stat{font-size:2.5rem;font-weight:700;color:#C084FC}
+.sub{font-size:.72rem;color:#6B6B8A;margin-top:4px}
+.note{background:#1A0D00;border-left:3px solid #FF9500;padding:10px 14px;font-size:.75rem;color:#C8A000;margin-bottom:8px}
+</style></head><body>
+<div class="hdr">
+  <div><div class="hdr-title">Matter Checkpoint — ${client}</div><div class="hdr-sub">Internal use only · ${date}</div></div>
+  <div style="font-size:.7rem;color:#6B6B8A">Pre-client review · Do not share externally</div>
+</div>
+<div class="banner">
+  <span>Stages: <strong>${r?(r.stages||[]).join(' · '):'—'}</strong></span>
+  <span>Total value at risk: <strong>${cur}${netL}–${netH}M/yr</strong></span>
+</div>
+<div class="content">
+  <div class="card"><div class="sh">Commercial Headline</div><div class="stat">${cur}${netL}–${netH}M</div><div class="sub">Total annual value at risk · after ${c?c.overlap_pct:15}% overlap adjustment</div></div>
+  ${r?`<div class="card"><div class="sh">Research: CX Stage Assessment</div>${(r.findings||[]).map(f=>`<div style="background:#0A0B14;border-left:3px solid ${f.label==='EVIDENCED'?'#00C076':f.label==='INFERRED'?'#FF9500':'#444466'};padding:9px 12px;margin-bottom:6px;font-size:.78rem;color:#A0A0BC"><span style="font-size:.6rem;font-weight:700;padding:1px 6px;background:${f.label==='EVIDENCED'?'#00C076':f.label==='INFERRED'?'#FF9500':'#444466'};color:${f.label==='HYPOTHESIS'?'#E8E8F0':'#000'};margin-right:7px">${f.label}</span>${f.text}</div>`).join('')}</div>`:''}
+  <div class="card"><div class="sh">Evidence Gaps — Complete These Before Presenting</div>${(r&&r.go_digging||[]).filter(g=>g.priority==='H').slice(0,5).map((g,i)=>`<div class="note">${i+1}. ${g.task} <span style="float:right;font-size:.65rem;font-weight:700">${g.time||''}</span></div>`).join('')}</div>
+</div></body></html>`;
+}
+
+/* ═══════════════════════════════ UI HELPERS ════════════════════════ */
+function setSend(on){
+  document.getElementById('send-btn').disabled=!on;
+  document.getElementById('user-input').disabled=!on;
+}
+
+function handleKey(e){
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg()}
+}
+
+function resize(el){
+  el.style.height='auto';
+  el.style.height=Math.min(el.scrollHeight,130)+'px';
+}
+</script>
+</body>
+</html>
