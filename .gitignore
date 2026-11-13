@@ -12,3 +12,8 @@ output/
 ## Logs
 *.log
 *.jsonl
+
+## Vercel / secrets
+.env
+.vercel
+node_modules
